@@ -398,14 +398,61 @@ class SettingsScreen extends StatelessWidget {
                     builder: (_) => EditCardScreen(
                       initialCard: card,
                       onSave: (updated) => appState.updateCard(updated),
+                      onDelete: () => appState.deleteCard(card.id),
                     ),
                   ),
                 );
               },
             ),
+            // Remove Card Button
+            IconButton(
+              tooltip: 'Remove Card',
+              icon: Icon(
+                Icons.delete_outline_rounded,
+                color: theme.colorScheme.error,
+                size: 21,
+              ),
+              onPressed: () => _confirmDeleteCard(context, card),
+            ),
           ],
         ),
       ),
+    );
+  }
+
+  void _confirmDeleteCard(BuildContext context, CreditCard card) {
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: Text('Remove ${card.name}?'),
+          content: Text(
+            'Are you sure you want to remove this card (${card.bank} •••• ${card.cardNumberLast4}) and all its billing history? This action cannot be undone.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.error,
+              ),
+              onPressed: () {
+                appState.deleteCard(card.id);
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('${card.name} removed successfully!'),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              },
+              child: const Text('Remove Card'),
+            ),
+          ],
+        );
+      },
     );
   }
 

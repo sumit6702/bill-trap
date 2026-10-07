@@ -172,10 +172,10 @@ class _EditBillDialogState extends State<EditBillDialog> {
               spacing: 8,
               runSpacing: 6,
               children: [
-                _buildQuickChip('+₹500', 500),
-                _buildQuickChip('+₹1,000', 1000),
-                _buildQuickChip('+₹5,000', 5000),
-                _buildQuickChip('+₹10,000', 10000),
+                _buildQuickChip('+₹ 500', 500),
+                _buildQuickChip('+₹ 1,000', 1000),
+                _buildQuickChip('+₹ 5,000', 5000),
+                _buildQuickChip('+₹ 10,000', 10000),
                 ActionChip(
                   label: const Text('Clear'),
                   onPressed: () => _amountController.clear(),

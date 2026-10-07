@@ -6,11 +6,13 @@ import '../widgets/credit_card_widget.dart';
 class EditCardScreen extends StatefulWidget {
   final CreditCard? initialCard;
   final Function(CreditCard card) onSave;
+  final VoidCallback? onDelete;
 
   const EditCardScreen({
     super.key,
     this.initialCard,
     required this.onSave,
+    this.onDelete,
   });
 
   @override
@@ -149,6 +151,35 @@ class _EditCardScreenState extends State<EditCardScreen> {
     Navigator.pop(context);
   }
 
+  void _confirmDelete(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Remove ${_nameController.text}?'),
+        content: const Text(
+          'Are you sure you want to remove this card and all its billing history? This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+            onPressed: () {
+              Navigator.pop(ctx);
+              widget.onDelete?.call();
+              Navigator.pop(context);
+            },
+            child: const Text('Remove Card'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -169,6 +200,13 @@ class _EditCardScreenState extends State<EditCardScreen> {
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         actions: [
+          if (widget.onDelete != null)
+            IconButton(
+              tooltip: 'Remove Card',
+              icon: Icon(Icons.delete_outline_rounded,
+                  color: theme.colorScheme.error),
+              onPressed: () => _confirmDelete(context),
+            ),
           FilledButton.icon(
             onPressed: _save,
             icon: const Icon(Icons.check_rounded, size: 18),
@@ -482,6 +520,27 @@ class _EditCardScreenState extends State<EditCardScreen> {
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ),
+            if (widget.onDelete != null) ...[
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: theme.colorScheme.error,
+                  side: BorderSide(
+                    color: theme.colorScheme.error.withOpacity(0.5),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                onPressed: () => _confirmDelete(context),
+                icon: const Icon(Icons.delete_outline_rounded),
+                label: const Text(
+                  'Remove This Card',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
             const SizedBox(height: 24),
           ],
         ),

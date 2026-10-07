@@ -41,12 +41,21 @@ class AppState extends ChangeNotifier {
     if (_cards.isEmpty) {
       _cards = CreditCard.defaultCards();
       await _storage.saveCards(_cards);
-    } else if (!_cards.any((c) => c.id == 'slice_card')) {
+    } else {
+      // Ensure HDFC Millennia is removed if stored previously
+      if (_cards.any((c) => c.id == 'hdfc_millennia')) {
+        _cards.removeWhere((c) => c.id == 'hdfc_millennia');
+        _bills.removeWhere((b) => b.cardId == 'hdfc_millennia');
+        await _storage.saveCards(_cards);
+        await _storage.saveBills(_bills);
+      }
       // Auto-include Slice Card if missing from existing stored cards
-      final sliceCard =
-          CreditCard.defaultCards().firstWhere((c) => c.id == 'slice_card');
-      _cards.add(sliceCard);
-      await _storage.saveCards(_cards);
+      if (!_cards.any((c) => c.id == 'slice_card')) {
+        final sliceCard =
+            CreditCard.defaultCards().firstWhere((c) => c.id == 'slice_card');
+        _cards.add(sliceCard);
+        await _storage.saveCards(_cards);
+      }
     }
 
     // Seed realistic sample amounts if bills are completely empty
@@ -80,7 +89,6 @@ class AppState extends ChangeNotifier {
       'icici_amazon': 26400.0,
       'idfc_power': 7230.0,
       'icici_coral': 18950.0,
-      'hdfc_millennia': 31200.0,
       'slice_card': 9450.0,
     };
 

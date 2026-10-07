@@ -10,9 +10,9 @@ void main() {
   });
 
   group('CreditCard Model Tests', () {
-    test('Default cards match user requirements including Slice Card', () {
+    test('Default 5 cards match user requirements', () {
       final defaults = CreditCard.defaultCards();
-      expect(defaults.length, 6);
+      expect(defaults.length, 5);
 
       final flipkart = defaults.firstWhere((c) => c.id == 'axis_flipkart');
       expect(flipkart.name, 'Axis Flipkart Card');
@@ -38,6 +38,9 @@ void main() {
       expect(slice.name, 'Slice Card');
       expect(slice.dueDay, 5);
       expect(slice.billDay, 21);
+
+      // Verify HDFC Millennia is not in defaults
+      expect(defaults.any((c) => c.id == 'hdfc_millennia'), isFalse);
     });
 
     test('Date calculation handles leap years and shorter months correctly', () {
@@ -82,7 +85,7 @@ void main() {
       final state = AppState();
       await state.init();
 
-      expect(state.cards.length, 6);
+      expect(state.cards.length, 5);
 
       final initialDue = state.totalDueAmount;
       expect(initialDue, greaterThan(0));
@@ -96,8 +99,18 @@ void main() {
       }
 
       expect(state.totalPendingAmount, 0.0);
-      expect(state.paidCardsCount, 6);
+      expect(state.paidCardsCount, 5);
       expect(state.totalPaidAmount, state.totalDueAmount);
+    });
+
+    test('Remove card option deletes card and its billing data', () async {
+      final state = AppState();
+      await state.init();
+
+      expect(state.cards.length, 5);
+      await state.deleteCard('slice_card');
+      expect(state.cards.length, 4);
+      expect(state.cards.any((c) => c.id == 'slice_card'), isFalse);
     });
 
     test('Export and import backup restores data cleanly', () async {

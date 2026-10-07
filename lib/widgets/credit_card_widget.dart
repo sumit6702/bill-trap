@@ -90,7 +90,7 @@ class _CreditCardWidgetState extends State<CreditCardWidget>
 
   String _formatCurrency(double amount) {
     final formatter = NumberFormat.currency(
-      symbol: '₹',
+      symbol: '₹ ',
       locale: 'en_IN',
       decimalDigits: amount.truncateToDouble() == amount ? 0 : 2,
     );
