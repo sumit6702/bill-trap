@@ -185,6 +185,19 @@ class CreditCard {
         gradientColors: [0xFF0B486B, 0xFF003056, 0xFF1F1C2C],
         accentColor: 0xFF00D2FF,
       ),
+      const CreditCard(
+        id: 'slice_card',
+        name: 'Slice Card',
+        bank: 'SLICE',
+        cardSubtitle: 'Slice Super Card',
+        cardNumberLast4: '2905',
+        cardHolder: 'SLICE MEMBER',
+        dueDay: 5,
+        billDay: 21,
+        network: CardNetwork.visa,
+        gradientColors: [0xFF6A11CB, 0xFF2575FC, 0xFF1B003A],
+        accentColor: 0xFFB02AEC,
+      ),
     ];
   }
 }

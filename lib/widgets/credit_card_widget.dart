@@ -1,11 +1,9 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/credit_card.dart';
 import '../models/monthly_bill.dart';
 import 'card_chip.dart';
 import 'card_network_logo.dart';
-import 'credit_card_back.dart';
 
 class CreditCardWidget extends StatefulWidget {
   final CreditCard card;
@@ -33,12 +31,9 @@ class _CreditCardWidgetState extends State<CreditCardWidget>
     with TickerProviderStateMixin {
   late AnimationController _shimmerController;
   late AnimationController _tiltResetController;
-  late AnimationController _flipController;
 
   double _tiltX = 0.0;
   double _tiltY = 0.0;
-
-  bool _isFlipped = false;
 
   @override
   void initState() {
@@ -55,34 +50,25 @@ class _CreditCardWidgetState extends State<CreditCardWidget>
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
-
-    // 3D Flip controller
-    _flipController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 650),
-    );
   }
 
   @override
   void dispose() {
     _shimmerController.dispose();
     _tiltResetController.dispose();
-    _flipController.dispose();
     super.dispose();
   }
 
   void _handlePanUpdate(DragUpdateDetails details) {
-    if (_isFlipped) return;
     setState(() {
-      _tiltX += details.delta.dx * 0.0015;
-      _tiltY -= details.delta.dy * 0.0015;
-      _tiltX = _tiltX.clamp(-0.25, 0.25);
-      _tiltY = _tiltY.clamp(-0.25, 0.25);
+      _tiltX += details.delta.dx * 0.0012;
+      _tiltY -= details.delta.dy * 0.0012;
+      _tiltX = _tiltX.clamp(-0.2, 0.2);
+      _tiltY = _tiltY.clamp(-0.2, 0.2);
     });
   }
 
   void _handlePanEnd(DragEndDetails details) {
-    if (_isFlipped) return;
     final startX = _tiltX;
     final startY = _tiltY;
 
@@ -100,17 +86,6 @@ class _CreditCardWidgetState extends State<CreditCardWidget>
     });
 
     _tiltResetController.forward();
-  }
-
-  void _toggleFlip() {
-    setState(() {
-      _isFlipped = !_isFlipped;
-    });
-    if (_isFlipped) {
-      _flipController.forward();
-    } else {
-      _flipController.reverse();
-    }
   }
 
   String _formatCurrency(double amount) {
@@ -171,16 +146,13 @@ class _CreditCardWidgetState extends State<CreditCardWidget>
 
     final statusText = _getDueDateStatus(dueDate);
     final statusColor = _getDueDateStatusColor(dueDate);
+    final primaryColor = Color(widget.card.accentColor);
 
     return AnimatedBuilder(
-      animation: Listenable.merge([_shimmerController, _flipController]),
+      animation: _shimmerController,
       builder: (context, child) {
-        final flipAngle = _flipController.value * math.pi;
-        final isUnder = flipAngle > (math.pi / 2);
-
         final transform = Matrix4.identity()
-          ..setEntry(3, 2, 0.0012)
-          ..rotateY(flipAngle)
+          ..setEntry(3, 2, 0.001)
           ..rotateX(_tiltY)
           ..rotateY(_tiltX);
 
@@ -190,375 +162,342 @@ class _CreditCardWidgetState extends State<CreditCardWidget>
           child: Transform(
             transform: transform,
             alignment: Alignment.center,
-            child: isUnder
-                ? Transform(
-                    transform: Matrix4.identity()..rotateY(math.pi),
-                    alignment: Alignment.center,
-                    child: CreditCardBackWidget(
-                      card: widget.card,
-                      bill: widget.bill,
-                      onFlip: _toggleFlip,
-                    ),
-                  )
-                : _buildFrontCard(
-                    context,
-                    dueString,
-                    billString,
-                    statusText,
-                    statusColor,
+            child: Container(
+              constraints: const BoxConstraints(minHeight: 228),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: widget.card.gradientColors.map((c) => Color(c)).toList(),
+                ),
+                boxShadow: [
+                  // Dynamic accent glow
+                  BoxShadow(
+                    color: primaryColor.withOpacity(0.35),
+                    blurRadius: 22,
+                    spreadRadius: -2,
+                    offset: const Offset(0, 10),
                   ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildFrontCard(
-    BuildContext context,
-    String dueString,
-    String billString,
-    String statusText,
-    Color statusColor,
-  ) {
-    final primaryColor = Color(widget.card.accentColor);
-
-    return Container(
-      constraints: const BoxConstraints(minHeight: 228),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: widget.card.gradientColors.map((c) => Color(c)).toList(),
-        ),
-        boxShadow: [
-          // Dynamic accent glow
-          BoxShadow(
-            color: primaryColor.withOpacity(0.35),
-            blurRadius: 22,
-            spreadRadius: -2,
-            offset: const Offset(0, 10),
-          ),
-          BoxShadow(
-            color: Colors.black.withOpacity(0.45),
-            blurRadius: 14,
-            offset: const Offset(0, 5),
-          ),
-        ],
-        border: Border.all(
-          color: Colors.white.withOpacity(0.22),
-          width: 1.2,
-        ),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: Stack(
-          children: [
-            // Holographic Shimmer Sweep Light
-            Positioned.fill(
-              child: CustomPaint(
-                painter: _CardShimmerPainter(
-                  progress: _shimmerController.value,
-                  accentColor: primaryColor,
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.45),
+                    blurRadius: 14,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.22),
+                  width: 1.2,
                 ),
               ),
-            ),
-
-            // Card Inner Content
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Top Row: Bank name, Card title & NFC icon + Flip button
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              widget.card.bank,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: 1.5,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              widget.card.name,
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.85),
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Stack(
+                  children: [
+                    // Holographic Shimmer Sweep Light
+                    Positioned.fill(
+                      child: CustomPaint(
+                        painter: _CardShimmerPainter(
+                          progress: _shimmerController.value,
+                          accentColor: primaryColor,
                         ),
                       ),
-                      // NFC Contactless Wave
-                      Icon(
-                        Icons.wifi_rounded,
-                        color: Colors.white.withOpacity(0.7),
-                        size: 20,
-                      ),
-                      const SizedBox(width: 8),
-                      // Flip Card Button
-                      IconButton(
-                        visualDensity: VisualDensity.compact,
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                        tooltip: 'Flip Card',
-                        icon: Icon(
-                          Icons.flip_rounded,
-                          color: Colors.white.withOpacity(0.75),
-                          size: 19,
-                        ),
-                        onPressed: _toggleFlip,
-                      ),
-                    ],
-                  ),
+                    ),
 
-                  const SizedBox(height: 12),
-
-                  // Chip & Quick Actions Row
-                  Row(
-                    children: [
-                      const CardChipWidget(),
-                      const Spacer(),
-                      // Paid / Unpaid Status Toggle Pill
-                      InkWell(
-                        onTap: widget.onTogglePaid,
-                        borderRadius: BorderRadius.circular(20),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 250),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: widget.bill.isPaid
-                                ? const Color(0xFF10B981).withOpacity(0.25)
-                                : Colors.black.withOpacity(0.35),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: widget.bill.isPaid
-                                  ? const Color(0xFF10B981)
-                                  : Colors.white24,
-                              width: 1.2,
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
+                    // Card Inner Content
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Top Row: Bank name, Card title & NFC Contactless Wave
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Icon(
-                                widget.bill.isPaid
-                                    ? Icons.check_circle_rounded
-                                    : Icons.radio_button_unchecked_rounded,
-                                color: widget.bill.isPaid
-                                    ? const Color(0xFF10B981)
-                                    : Colors.white70,
-                                size: 14,
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      widget.card.bank,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w900,
+                                        letterSpacing: 1.5,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      widget.card.name,
+                                      style: TextStyle(
+                                        color: Colors.white.withOpacity(0.85),
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                              const SizedBox(width: 5),
-                              Text(
-                                widget.bill.isPaid ? 'PAID' : 'UNPAID',
-                                style: TextStyle(
-                                  color: widget.bill.isPaid
-                                      ? const Color(0xFF34D399)
-                                      : Colors.white70,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 0.8,
+                              // NFC Contactless Wave Symbol
+                              Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Icon(
+                                  Icons.wifi_rounded,
+                                  color: Colors.white.withOpacity(0.85),
+                                  size: 20,
                                 ),
                               ),
                             ],
                           ),
-                        ),
-                      ),
-                    ],
-                  ),
 
-                  const SizedBox(height: 14),
+                          const SizedBox(height: 12),
 
-                  // Main Big Size Bill Amount
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'TOTAL BILL AMOUNT',
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.65),
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 1.2,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              _formatCurrency(widget.bill.amount),
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 28,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: -0.5,
-                                decoration: widget.bill.isPaid
-                                    ? TextDecoration.lineThrough
-                                    : null,
-                                decorationColor: Colors.white60,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      // Prominent Edit Button
-                      FilledButton.tonalIcon(
-                        style: FilledButton.styleFrom(
-                          backgroundColor: Colors.white.withOpacity(0.2),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 8),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            side: BorderSide(
-                              color: Colors.white.withOpacity(0.3),
-                              width: 0.8,
-                            ),
-                          ),
-                        ),
-                        onPressed: widget.onEdit,
-                        icon: const Icon(Icons.edit_rounded, size: 16),
-                        label: const Text(
-                          'Edit',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 14),
-
-                  // Bottom Grid: Due Date, Bill Date, Card Number & Network
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.25),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        // Due Date Column with Badge
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'DUE DATE',
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.55),
-                                fontSize: 9,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 0.8,
-                              ),
-                            ),
-                            const SizedBox(height: 1),
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  dueString,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.bold,
+                          // Chip & Paid / Unpaid Status Toggle Pill
+                          Row(
+                            children: [
+                              const CardChipWidget(),
+                              const Spacer(),
+                              // Paid / Unpaid Status Toggle Pill
+                              InkWell(
+                                onTap: widget.onTogglePaid,
+                                borderRadius: BorderRadius.circular(20),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 250),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 5),
+                                  decoration: BoxDecoration(
+                                    color: widget.bill.isPaid
+                                        ? const Color(0xFF10B981).withOpacity(0.25)
+                                        : Colors.black.withOpacity(0.35),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: widget.bill.isPaid
+                                          ? const Color(0xFF10B981)
+                                          : Colors.white24,
+                                      width: 1.2,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        widget.bill.isPaid
+                                            ? Icons.check_circle_rounded
+                                            : Icons.radio_button_unchecked_rounded,
+                                        color: widget.bill.isPaid
+                                            ? const Color(0xFF10B981)
+                                            : Colors.white70,
+                                        size: 14,
+                                      ),
+                                      const SizedBox(width: 5),
+                                      Text(
+                                        widget.bill.isPaid ? 'PAID' : 'UNPAID',
+                                        style: TextStyle(
+                                          color: widget.bill.isPaid
+                                              ? const Color(0xFF34D399)
+                                              : Colors.white70,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                          letterSpacing: 0.8,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                const SizedBox(width: 5),
-                                Container(
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 14),
+
+                          // Main Big Size Bill Amount & Edit Button
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'TOTAL BILL AMOUNT',
+                                      style: TextStyle(
+                                        color: Colors.white.withOpacity(0.65),
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w700,
+                                        letterSpacing: 1.2,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      _formatCurrency(widget.bill.amount),
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 28,
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: -0.5,
+                                        decoration: widget.bill.isPaid
+                                            ? TextDecoration.lineThrough
+                                            : null,
+                                        decorationColor: Colors.white60,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              // Edit Button
+                              FilledButton.tonalIcon(
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: Colors.white.withOpacity(0.2),
+                                  foregroundColor: Colors.white,
                                   padding: const EdgeInsets.symmetric(
-                                      horizontal: 5, vertical: 1.5),
-                                  decoration: BoxDecoration(
-                                    color: statusColor.withOpacity(0.2),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: Text(
-                                    statusText,
-                                    style: TextStyle(
-                                      color: statusColor,
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.w700,
+                                      horizontal: 14, vertical: 8),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    side: BorderSide(
+                                      color: Colors.white.withOpacity(0.3),
+                                      width: 0.8,
                                     ),
                                   ),
                                 ),
+                                onPressed: widget.onEdit,
+                                icon: const Icon(Icons.edit_rounded, size: 16),
+                                label: const Text(
+                                  'Edit',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 14),
+
+                          // Bottom Grid: Due Date, Bill Date, Card Number & Network Logo
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.25),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                // Due Date Column with Badge
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'DUE DATE',
+                                      style: TextStyle(
+                                        color: Colors.white.withOpacity(0.55),
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.w700,
+                                        letterSpacing: 0.8,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 1),
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          dueString,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 5),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 5, vertical: 1.5),
+                                          decoration: BoxDecoration(
+                                            color: statusColor.withOpacity(0.2),
+                                            borderRadius:
+                                                BorderRadius.circular(4),
+                                          ),
+                                          child: Text(
+                                            statusText,
+                                            style: TextStyle(
+                                              color: statusColor,
+                                              fontSize: 9,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+
+                                // Bill Date Column
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'BILL DATE',
+                                      style: TextStyle(
+                                        color: Colors.white.withOpacity(0.55),
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.w700,
+                                        letterSpacing: 0.8,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 1),
+                                    Text(
+                                      billString,
+                                      style: TextStyle(
+                                        color: Colors.white.withOpacity(0.9),
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+
+                                // Masked Card Number & Network Logo
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      '•••• ${widget.card.cardNumberLast4}',
+                                      style: TextStyle(
+                                        color: Colors.white.withOpacity(0.75),
+                                        fontSize: 11,
+                                        fontFamily: 'monospace',
+                                        letterSpacing: 1.0,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    CardNetworkLogo(
+                                      network: widget.card.network,
+                                      height: 22,
+                                    ),
+                                  ],
+                                ),
                               ],
                             ),
-                          ],
-                        ),
-
-                        // Bill Date Column
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'BILL DATE',
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.55),
-                                fontSize: 9,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 0.8,
-                              ),
-                            ),
-                            const SizedBox(height: 1),
-                            Text(
-                              billString,
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.9),
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        // Masked Card Number & Network Logo
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              '•••• ${widget.card.cardNumberLast4}',
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.75),
-                                fontSize: 11,
-                                fontFamily: 'monospace',
-                                letterSpacing: 1.0,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            CardNetworkLogo(
-                              network: widget.card.network,
-                              height: 22,
-                            ),
-                          ],
-                        ),
-                      ],
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }

@@ -41,6 +41,12 @@ class AppState extends ChangeNotifier {
     if (_cards.isEmpty) {
       _cards = CreditCard.defaultCards();
       await _storage.saveCards(_cards);
+    } else if (!_cards.any((c) => c.id == 'slice_card')) {
+      // Auto-include Slice Card if missing from existing stored cards
+      final sliceCard =
+          CreditCard.defaultCards().firstWhere((c) => c.id == 'slice_card');
+      _cards.add(sliceCard);
+      await _storage.saveCards(_cards);
     }
 
     // Seed realistic sample amounts if bills are completely empty
@@ -75,6 +81,7 @@ class AppState extends ChangeNotifier {
       'idfc_power': 7230.0,
       'icici_coral': 18950.0,
       'hdfc_millennia': 31200.0,
+      'slice_card': 9450.0,
     };
 
     for (final card in _cards) {

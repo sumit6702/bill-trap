@@ -639,7 +639,7 @@ class SettingsScreen extends StatelessWidget {
         return AlertDialog(
           title: const Text('Reset to Defaults?'),
           content: const Text(
-            'This will restore the 5 default cards (Axis Flipkart, ICICI Amazon, IDFC Power, ICICI Coral, HDFC Millennia) with their specified Due Dates and Bill Dates.',
+            'This will restore default cards (Axis Flipkart, ICICI Amazon, IDFC Power, ICICI Coral, HDFC Millennia, Slice Card) with their specified Due Dates and Bill Dates.',
           ),
           actions: [
             TextButton(

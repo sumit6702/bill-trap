@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bill_tracker_app/models/credit_card.dart';
-import 'package:bill_tracker_app/models/monthly_bill.dart';
 import 'package:bill_tracker_app/state/app_state.dart';
 
 void main() {
@@ -11,9 +10,9 @@ void main() {
   });
 
   group('CreditCard Model Tests', () {
-    test('Default cards match user requirements', () {
+    test('Default cards match user requirements including Slice Card', () {
       final defaults = CreditCard.defaultCards();
-      expect(defaults.length, 5);
+      expect(defaults.length, 6);
 
       final flipkart = defaults.firstWhere((c) => c.id == 'axis_flipkart');
       expect(flipkart.name, 'Axis Flipkart Card');
@@ -34,6 +33,11 @@ void main() {
       expect(coral.name, 'ICICI Coral Card');
       expect(coral.dueDay, 20);
       expect(coral.billDay, 2);
+
+      final slice = defaults.firstWhere((c) => c.id == 'slice_card');
+      expect(slice.name, 'Slice Card');
+      expect(slice.dueDay, 5);
+      expect(slice.billDay, 21);
     });
 
     test('Date calculation handles leap years and shorter months correctly', () {
@@ -78,7 +82,7 @@ void main() {
       final state = AppState();
       await state.init();
 
-      expect(state.cards.length, 5);
+      expect(state.cards.length, 6);
 
       final initialDue = state.totalDueAmount;
       expect(initialDue, greaterThan(0));
@@ -92,7 +96,7 @@ void main() {
       }
 
       expect(state.totalPendingAmount, 0.0);
-      expect(state.paidCardsCount, 5);
+      expect(state.paidCardsCount, 6);
       expect(state.totalPaidAmount, state.totalDueAmount);
     });
 
