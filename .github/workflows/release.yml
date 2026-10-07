@@ -1,0 +1,84 @@
+name: Build & Release Bill Trap APK
+
+on:
+  push:
+    branches:
+      - master
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build & Release APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Get Dependencies
+        run: flutter pub get
+
+      - name: Run Tests
+        run: flutter test
+
+      - name: Build Release APK
+        run: flutter build apk --release
+
+      - name: Prepare APK for Release
+        run: |
+          mkdir -p release-output
+          cp build/app/outputs/flutter-apk/app-release.apk release-output/BillTrap.apk
+          cp build/app/outputs/flutter-apk/app-release.apk release-output/BillTrap-v1.0.${{ github.run_number }}.apk
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BillTrap-APK
+          path: release-output/BillTrap.apk
+          retention-days: 30
+
+      - name: Create or Update GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: "Bill Trap v1.0.${{ github.run_number }}"
+          body: |
+            ### 📱 Bill Trap Release v1.0.${{ github.run_number }}
+            
+            Automatic build triggered by commit: `${{ github.sha }}`
+            
+            #### 📥 Download APK:
+            - **[BillTrap.apk](https://github.com/${{ github.repository }}/releases/download/v1.0.${{ github.run_number }}/BillTrap.apk)** (Latest stable build)
+            - **[BillTrap-v1.0.${{ github.run_number }}.apk](https://github.com/${{ github.repository }}/releases/download/v1.0.${{ github.run_number }}/BillTrap-v1.0.${{ github.run_number }}.apk)**
+            
+            #### ✨ Features:
+            - 5 Pre-configured credit cards (Axis Flipkart, ICICI Amazon, IDFC Power, ICICI Coral, Slice Card)
+            - Due Date and Bill Date tracking with alerts
+            - Total monthly due summary and settlement tracking
+            - Interactive 3D perspective tilt and holographic shimmer effects
+            - Full Material 3 theme customization (Light / Dark / Accent colors)
+            - JSON backup export and import
+          files: |
+            release-output/BillTrap.apk
+            release-output/BillTrap-v1.0.${{ github.run_number }}.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

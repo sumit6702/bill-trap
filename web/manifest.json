@@ -1,6 +1,6 @@
 {
-    "name": "bill_tracker_app",
-    "short_name": "bill_tracker_app",
+    "name": "Bill Trap",
+    "short_name": "Bill Trap",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

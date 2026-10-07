@@ -103,7 +103,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(width: 10),
                 const Text(
-                  'Bill Tracker',
+                  'Bill Trap',
                   style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: -0.5),
                 ),
               ],

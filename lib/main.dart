@@ -34,7 +34,7 @@ class BillTrackerApp extends StatelessWidget {
         final seedColor = appState.accentColor;
 
         return MaterialApp(
-          title: 'Credit Card Bill Tracker',
+          title: 'Bill Trap',
           debugShowCheckedModeBanner: false,
           themeMode: appState.themeMode,
 

@@ -24,7 +24,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     // Verify app title exists
-    expect(find.text('Bill Tracker'), findsOneWidget);
+    expect(find.text('Bill Trap'), findsOneWidget);
 
     // Verify all 5 cards are rendered
     expect(find.text('Axis Flipkart Card'), findsOneWidget);
